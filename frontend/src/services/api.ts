@@ -1,8 +1,35 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const baseURL = process.env.NODE_ENV === "production"
+  ? `https://findthem-ai.vercel.app`
+  : "";
+
+export const fetchGeminiResponse = async (userMessage: string) => {
+  try {
+    const response = await fetch(`${baseURL}/api/gemini`, {
+      method: "POST",
+      body: JSON.stringify({ userMessage }),
+    });
+
+    const data = await response.json();
+    return data.response || "Sorry, I couldn't process that. 😕";
+  } catch (error) {
+    console.error("Error fetching Gemini response:", error);
+    return "Oops! Something went wrong. Please try again. ⚠️";
+  }
+};
+
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_BASE_API_URL}/api/v1`;
+
+// ✅ Always returns a safe object for headers
+const getAuthHeaders = (): Record<string, string> => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export const fetchMissingPersons = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/missing-persons`);
+    const response = await fetch(`${API_BASE_URL}/missing-persons`, {
+      headers: getAuthHeaders(),
+    });
     return await response.json();
   } catch (error) {
     console.error("Error fetching missing persons:", error);
@@ -12,7 +39,9 @@ export const fetchMissingPersons = async () => {
 
 export const fetchMissingPersonById = async (id: number) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/missing-persons/${id}`);
+    const response = await fetch(`${API_BASE_URL}/missing-persons/${id}`, {
+      headers: getAuthHeaders(),
+    });
     return await response.json();
   } catch (error) {
     console.error("Error fetching missing person:", error);
@@ -24,6 +53,7 @@ export const addMissingPerson = async (formData: FormData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/create-missing-person`, {
       method: "POST",
+      headers: getAuthHeaders(),
       body: formData,
     });
     return await response.json();
@@ -37,6 +67,7 @@ export const deleteMissingPerson = async (id: number) => {
   try {
     const response = await fetch(`${API_BASE_URL}/missing-persons/${id}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -57,6 +88,7 @@ export const matchFace = async (file: File) => {
 
     const response = await fetch(`${API_BASE_URL}/found-person`, {
       method: "POST",
+      headers: getAuthHeaders(),
       body: formData,
     });
 
@@ -71,16 +103,12 @@ export const matchFace = async (file: File) => {
   }
 };
 
-
 const API_AUTH_URL = API_BASE_URL;
 
 export const signup = async (userData: { username: string; password: string }) => {
   try {
     const response = await fetch(`${API_AUTH_URL}/register`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
       body: new URLSearchParams(userData),
     });
 
@@ -95,9 +123,6 @@ export const login = async (credentials: { username: string; password: string })
   try {
     const response = await fetch(`${API_AUTH_URL}/token`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
       body: new URLSearchParams(credentials),
     });
 
